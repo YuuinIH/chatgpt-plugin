@@ -1,3 +1,6 @@
+# 关于本仓库
+基于chatgpt插件进行了一些修改，以满足个人的科研用途。
+
 # 云崽qq机器人的chatgpt插件
 ![26224FE397F1E74104C1C007C1A32DDE](https://user-images.githubusercontent.com/21212372/227718994-4d33da74-6886-41d5-afd0-73986b086df0.gif)
 
