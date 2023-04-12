@@ -35,6 +35,7 @@ import { ChatgptManagement } from './management.js'
 import { getPromptByName } from '../utils/prompts.js'
 import Translate from '../utils/baiduTranslate.js'
 import emojiStrip from 'emoji-strip'
+import { saveChatMessagetoLocalLog } from '../utils/log.js'
 try {
   await import('keyv')
 } catch (err) {
@@ -61,8 +62,8 @@ const defaultPropmtPrefix = ', a large language model trained by OpenAI. You ans
 const newFetch = (url, options = {}) => {
   const defaultOptions = Config.proxy
     ? {
-        agent: proxy(Config.proxy)
-      }
+      agent: proxy(Config.proxy)
+    }
     : {}
   const mergedOptions = {
     ...defaultOptions,
@@ -74,7 +75,7 @@ const newFetch = (url, options = {}) => {
 // 后台地址
 const viewHost = Config.viewHost ? `${Config.viewHost}/` : `http://127.0.0.1:${Config.serverPort || 3321}/`
 export class chatgpt extends plugin {
-  constructor () {
+  constructor() {
     let toggleMode = Config.toggleMode
     super({
       /** 功能名称 */
@@ -202,7 +203,7 @@ export class chatgpt extends plugin {
    * @param e
    * @returns {Promise<void>}
    */
-  async getConversations (e) {
+  async getConversations(e) {
     // todo 根据use返回不同的对话列表
     let keys = await redis.keys('CHATGPT:CONVERSATIONS:*')
     if (!keys || keys.length === 0) {
@@ -225,20 +226,7 @@ export class chatgpt extends plugin {
    * @param e
    * @returns {Promise<void>}
    */
-  async destroyConversations (e) {
-    const userData = await getUserData(e.user_id)
-    const use = (userData.mode === 'default' ? null : userData.mode) || await redis.get('CHATGPT:USE')
-    await redis.del(`CHATGPT:WRONG_EMOTION:${e.sender.user_id}`)
-    if (use === 'claude') {
-      // let client = new SlackClaudeClient({
-      //   slackUserToken: Config.slackUserToken,
-      //   slackChannelId: Config.slackChannelId
-      // })
-      // await client.endConversation()
-      await redis.del(`CHATGPT:SLACK_CONVERSATION:${e.sender.user_id}`)
-      await e.reply('claude对话已结束')
-      return
-    }
+  async destroyConversations(e) {
     let ats = e.message.filter(m => m.type === 'at')
     if (ats.length === 0) {
       if (use === 'api3') {
@@ -370,7 +358,7 @@ export class chatgpt extends plugin {
     }
   }
 
-  async endAllConversations (e) {
+  async endAllConversations(e) {
     let use = await redis.get('CHATGPT:USE') || 'api'
     let deleted = 0
     switch (use) {
@@ -443,7 +431,7 @@ export class chatgpt extends plugin {
     await this.reply(`结束了${deleted}个用户的对话。`, true)
   }
 
-  async deleteConversation (e) {
+  async deleteConversation(e) {
     let ats = e.message.filter(m => m.type === 'at')
     let use = await redis.get('CHATGPT:USE') || 'api'
     if (use !== 'api3') {
@@ -514,7 +502,7 @@ export class chatgpt extends plugin {
     await this.reply('ChatGPT回复已转换为图片模式')
   }
 
-  async switch2Text (e) {
+  async switch2Text(e) {
     let userSetting = await redis.get(`CHATGPT:USER:${e.sender.user_id}`)
     if (!userSetting) {
       userSetting = getDefaultReplySetting()
@@ -751,7 +739,7 @@ export class chatgpt extends plugin {
     await this.abstractChat(e, prompt, use)
   }
 
-  async abstractChat (e, prompt, use) {
+  async abstractChat(e, prompt, use) {
     let userSetting = await redis.get(`CHATGPT:USER:${e.sender.user_id}`)
     if (userSetting) {
       userSetting = JSON.parse(userSetting)
@@ -1232,6 +1220,8 @@ export class chatgpt extends plugin {
         // 移除队列首位，释放锁
         await redis.lPop('CHATGPT:CHAT_QUEUE', 0)
       }
+      // 用于研究用的日志存储
+      await saveChatMessagetoLocalLog(prompt,chatMessage)
     } catch (err) {
       logger.error(err)
       if (use !== 'bing') {
@@ -1298,7 +1288,7 @@ export class chatgpt extends plugin {
     return true
   }
 
-  async chatglm (e) {
+  async chatglm(e) {
     if (!Config.allowOtherMode) {
       return false
     }
@@ -1450,7 +1440,7 @@ export class chatgpt extends plugin {
     }
   }
 
-  async sendMessage (prompt, conversation = {}, use, e) {
+  async sendMessage(prompt, conversation = {}, use, e) {
     if (!conversation) {
       conversation = {
         timeoutMs: Config.defaultTimeoutMs
@@ -1841,7 +1831,7 @@ export class chatgpt extends plugin {
     await this.reply('已清空当前等待队列')
   }
 
-  async removeQueueFirst (e) {
+  async removeQueueFirst(e) {
     let uid = await redis.lPop('CHATGPT:CHAT_QUEUE', 0)
     if (!uid) {
       await this.reply('当前等待队列为空')
@@ -1850,7 +1840,7 @@ export class chatgpt extends plugin {
     }
   }
 
-  async getAllConversations (e) {
+  async getAllConversations(e) {
     const use = await redis.get('CHATGPT:USE')
     if (use === 'api3') {
       let conversations = await getConversations(e.sender.user_id, newFetch)
@@ -1871,7 +1861,7 @@ export class chatgpt extends plugin {
     }
   }
 
-  async joinConversation (e) {
+  async joinConversation(e) {
     let ats = e.message.filter(m => m.type === 'at')
     let use = await redis.get('CHATGPT:USE') || 'api'
     // if (use !== 'api3') {
@@ -1902,7 +1892,7 @@ export class chatgpt extends plugin {
     }
   }
 
-  async attachConversation (e) {
+  async attachConversation(e) {
     const use = await redis.get('CHATGPT:USE')
     if (use !== 'api3') {
       await this.reply('该功能目前仅支持API3模式')
@@ -2018,7 +2008,7 @@ export class chatgpt extends plugin {
    * @param prompt 问题
    * @param conversation 对话
    */
-  async chatgptBrowserBased (prompt, conversation) {
+  async chatgptBrowserBased(prompt, conversation) {
     let option = { markdown: true }
     if (Config['2captchaToken']) {
       option.captchaToken = Config['2captchaToken']
@@ -2038,7 +2028,7 @@ export class chatgpt extends plugin {
   }
 }
 
-async function getAvailableBingToken (conversation, throttled = []) {
+async function getAvailableBingToken(conversation, throttled = []) {
   let allThrottled = false
   if (!await redis.get('CHATGPT:BING_TOKENS')) {
     throw new Error('未绑定Bing Cookie，请使用#chatgpt设置必应token命令绑定Bing Cookie')
