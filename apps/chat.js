@@ -94,6 +94,12 @@ export class chatgpt extends plugin {
         },
         {
           /** 命令正则匹配 */
+          reg: '^#chat4[sS]*',
+          /** 执行方法 */
+          fnc: 'chatgpt4'
+        },
+        {
+          /** 命令正则匹配 */
           reg: '^#chat1[sS]*',
           /** 执行方法 */
           fnc: 'chatgpt1'
@@ -229,7 +235,7 @@ export class chatgpt extends plugin {
   async destroyConversations(e) {
     let ats = e.message.filter(m => m.type === 'at')
     if (ats.length === 0) {
-      if (use === 'api3') {
+      if (use === 'api3'|| use === 'api4') {
         await redis.del(`CHATGPT:QQ_CONVERSATION:${e.sender.user_id}`)
         await this.reply('已退出当前对话，该对话仍然保留。请@我进行聊天以开启新的对话', true)
       } else if (use === 'bing' && (Config.toneStyle === 'Sydney' || Config.toneStyle === 'Custom')) {
@@ -298,7 +304,7 @@ export class chatgpt extends plugin {
       let at = ats[0]
       let qq = at.qq
       let atUser = _.trimStart(at.text, '@')
-      if (use === 'api3') {
+      if (use === 'api3'|| use === 'api4') {
         await redis.del(`CHATGPT:QQ_CONVERSATION:${qq}`)
         await this.reply(`${atUser}已退出TA当前的对话，TA仍可以@我进行聊天以开启新的对话`, true)
       } else if (use === 'bing' && (Config.toneStyle === 'Sydney' || Config.toneStyle === 'Custom')) {
@@ -403,6 +409,9 @@ export class chatgpt extends plugin {
         }
         break
       }
+      case 'api4': {
+        //nobreak
+      }
       case 'api3': {
         let qcs = await redis.keys('CHATGPT:QQ_CONVERSATION:*')
         for (let i = 0; i < qcs.length; i++) {
@@ -434,7 +443,7 @@ export class chatgpt extends plugin {
   async deleteConversation(e) {
     let ats = e.message.filter(m => m.type === 'at')
     let use = await redis.get('CHATGPT:USE') || 'api'
-    if (use !== 'api3') {
+    if (use !== 'api3' && use !== 'api4') {
       await this.reply('本功能当前仅支持API3模式', true)
       return false
     }
@@ -807,7 +816,7 @@ export class chatgpt extends plugin {
       await this.reply('主人不让我回答你这种问题，真是抱歉了呢', true)
       return false
     }
-    if (use === 'api3') {
+    if (use === 'api3'|| use === 'api4') {
       let randomId = uuid()
       // 队列队尾插入，开始排队
       await redis.rPush('CHATGPT:CHAT_QUEUE', [randomId])
@@ -875,7 +884,7 @@ export class chatgpt extends plugin {
     let previousConversation
     let conversation = {}
     let key
-    if (use === 'api3') {
+    if (use === 'api3' && use === 'api4') {
       // api3 支持对话穿插，因此不按照qq号来进行判断了
       let conversationId = await redis.get(`CHATGPT:QQ_CONVERSATION:${e.sender.user_id}`)
       if (conversationId) {
@@ -885,7 +894,8 @@ export class chatgpt extends plugin {
         }
         conversation = {
           conversationId,
-          parentMessageId: lastMessageId
+          parentMessageId: lastMessageId,
+          useGPT4: use === 'api4'
         }
         if (Config.debug) {
           logger.mark({ previousConversation })
@@ -949,7 +959,7 @@ export class chatgpt extends plugin {
         // 字数超限直接返回
         return false
       }
-      if (use !== 'api3' && use !== 'poe' && use !== 'claude') {
+      if (use !== 'api3' && use !== 'poe' && use !== 'claude' && use !== 'api4') {
         previousConversation.conversation = {
           conversationId: chatMessage.conversationId
         }
@@ -1216,7 +1226,7 @@ export class chatgpt extends plugin {
           this.reply(`建议的回复：\n${chatMessage.suggestedResponses}`)
         }
       }
-      if (use === 'api3') {
+      if (use === 'api3' || use === 'api4') {
         // 移除队列首位，释放锁
         await redis.lPop('CHATGPT:CHAT_QUEUE', 0)
       }
@@ -1285,6 +1295,25 @@ export class chatgpt extends plugin {
       return false
     }
     await this.abstractChat(e, prompt, 'api3')
+    return true
+  }
+
+  async chatgpt4(e) {
+    if (!Config.allowOtherMode) {
+      return false
+    }
+    let ats = e.message.filter(m => m.type === 'at')
+    if (!e.atme && ats.length > 0) {
+      if (Config.debug) {
+        logger.mark('艾特别人了，没艾特我，忽略#chat4')
+      }
+      return false
+    }
+    let prompt = _.replace(e.raw_message.trimStart(), '#chat4', '').trim()
+    if (prompt.length === 0) {
+      return false
+    }
+    await this.abstractChat(e, prompt, 'api4')
     return true
   }
 
@@ -1659,6 +1688,9 @@ export class chatgpt extends plugin {
           }
         }
       }
+      case 'api4':{
+        //nobreak
+      }
       case 'api3': {
         // official without cloudflare
         let accessToken = await redis.get('CHATGPT:TOKEN')
@@ -1842,7 +1874,7 @@ export class chatgpt extends plugin {
 
   async getAllConversations(e) {
     const use = await redis.get('CHATGPT:USE')
-    if (use === 'api3') {
+    if (use === 'api3'|| use === 'api4') {
       let conversations = await getConversations(e.sender.user_id, newFetch)
       if (Config.debug) {
         logger.mark('all conversations: ', conversations)
@@ -1871,7 +1903,7 @@ export class chatgpt extends plugin {
     if (ats.length === 0) {
       await this.reply('指令错误，使用本指令时请同时@某人', true)
       return false
-    } else if (use === 'api3') {
+    } else if (use === 'api3'|| use === 'api4') {
       let at = ats[0]
       let qq = at.qq
       let atUser = _.trimStart(at.text, '@')
@@ -1894,7 +1926,7 @@ export class chatgpt extends plugin {
 
   async attachConversation(e) {
     const use = await redis.get('CHATGPT:USE')
-    if (use !== 'api3') {
+    if (use !== 'api3'||use !== 'api4') {
       await this.reply('该功能目前仅支持API3模式')
     } else {
       let conversationId = _.trimStart(e.msg.trimStart(), '#chatgpt切换对话').trim()
