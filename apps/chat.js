@@ -879,7 +879,7 @@ export class chatgpt extends plugin {
         await redis.lPop('CHATGPT:CHAT_QUEUE', 0)
       }
       // 用于研究用的日志存储
-      await saveChatMessagetoLocalLog(prompt,chatMessage)
+      saveChatMessagetoLocalLog(prompt,chatMessage)
     } catch (err) {
       logger.error(err)
       if (use !== 'bing') {
