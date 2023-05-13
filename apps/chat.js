@@ -233,6 +233,7 @@ export class chatgpt extends plugin {
    * @returns {Promise<void>}
    */
   async destroyConversations(e) {
+    const use = (userData.mode === 'default' ? null : userData.mode) || await redis.get('CHATGPT:USE')
     let ats = e.message.filter(m => m.type === 'at')
     if (ats.length === 0) {
       if (use === 'api3'|| use === 'api4') {
