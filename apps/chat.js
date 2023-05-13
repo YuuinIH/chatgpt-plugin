@@ -233,7 +233,9 @@ export class chatgpt extends plugin {
    * @returns {Promise<void>}
    */
   async destroyConversations(e) {
+    const userData = await getUserData(e.user_id)
     const use = (userData.mode === 'default' ? null : userData.mode) || await redis.get('CHATGPT:USE')
+    await redis.del(`CHATGPT:WRONG_EMOTION:${e.sender.user_id}`)
     let ats = e.message.filter(m => m.type === 'at')
     if (ats.length === 0) {
       if (use === 'api3'|| use === 'api4') {
