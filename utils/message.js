@@ -47,7 +47,7 @@ export class OfficialChatGPTClient {
     if (conversationId) {
       body.conversation_id = conversationId
     }
-    if (Config.useGPT4Plugins){
+    if ((Config.useGPT4 || opts.useGPT4 )&& Config.useGPT4Plugins){
       body.plugin_ids = Config.GPT4PluginsList
     }
     let conversationResponse
