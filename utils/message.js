@@ -27,6 +27,7 @@ export class OfficialChatGPTClient {
       // 如果配了proxy，而且有反代，但是没开启强制反代
       url = officialChatGPTAPI
     }
+    const gpt4Model = Config.useGPT4Plugins ? 'gpt-4-plugins' : 'gpt-4' 
     const body = {
       action,
       messages: [
@@ -39,11 +40,15 @@ export class OfficialChatGPTClient {
           }
         }
       ],
-      model: Config.useGPT4||opts.useGPT4 ? 'gpt-4' : 'text-davinci-002-render-sha',
-      parent_message_id: parentMessageId
+      model: Config.useGPT4 || opts.useGPT4 ? gpt4Model : 'text-davinci-002-render-sha',
+      parent_message_id: parentMessageId,
+      supports_modapi: true
     }
     if (conversationId) {
       body.conversation_id = conversationId
+    }
+    if (Config.useGPT4Plugins){
+      body.plugin_ids = Config.GPT4PluginsList
     }
     let conversationResponse
     let statusCode

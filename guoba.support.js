@@ -466,6 +466,18 @@ export function supportGuoba () {
           component: 'Switch'
         },
         {
+          field: 'useGPT4Plugins',
+          label: '使用GPT-4插件',
+          bottomHelpMessage: '使用GPT-4插件',
+          component: 'Switch'
+        },
+        {
+          field: 'GPT4PluginsList',
+          label: 'GPT-4插件列表',
+          bottomHelpMessage: 'GPT-4插件列表,输入对应的插件id,最多三个,用英文逗号隔开',
+          component: 'InputTextArea'
+        },
+        {
           label: '以下为浏览器方式的配置.(Deprecated)',
           component: 'Divider'
         },
@@ -774,7 +786,7 @@ export function supportGuoba () {
       setConfigData (data, { Result }) {
         for (let [keyPath, value] of Object.entries(data)) {
           // 处理黑名单
-          if (keyPath === 'blockWords' || keyPath === 'promptBlockWords' || keyPath === 'initiativeChatGroups') { value = value.toString().split(/[,，;；\|]/) }
+          if (keyPath === 'blockWords' || keyPath === 'promptBlockWords' || keyPath === 'initiativeChatGroups' || keyPath === 'GPT4PluginsList') { value = value.toString().split(/[,，;；\|]/) }
           if (Config[keyPath] != value) { Config[keyPath] = value }
         }
         return Result.ok({}, '保存成功~')
