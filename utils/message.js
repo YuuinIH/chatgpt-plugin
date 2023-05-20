@@ -27,7 +27,7 @@ export class OfficialChatGPTClient {
       // 如果配了proxy，而且有反代，但是没开启强制反代
       url = officialChatGPTAPI
     }
-    const gpt4Model = Config.useGPT4Plugins ? 'gpt-4-plugins' : 'gpt-4' 
+    const gpt4Model = Config.useGPT4Plugins ? 'gpt-4-plugins' : 'gpt-4-browsing' 
     const body = {
       action,
       messages: [
