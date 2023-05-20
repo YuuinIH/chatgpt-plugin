@@ -1,14 +1,10 @@
 import fetch from 'node-fetch'
 import { readFileSync, writeFile } from 'fs'
 
-const scrape = async (pbCookie, proxy) => {
-  let option = { headers: { cookie: `${pbCookie}` } }
-  if (proxy) {
-    option.agent = proxy
-  }
+const scrape = async (pbCookie) => {
   const _setting = await fetch(
     'https://poe.com/api/settings',
-    option
+    { headers: { cookie: `${pbCookie}` } }
   )
   if (_setting.status !== 200) throw new Error('Failed to fetch token')
   const appSettings = await _setting.json()
@@ -21,14 +17,10 @@ const scrape = async (pbCookie, proxy) => {
   }
 }
 
-const getUpdatedSettings = async (channelName, pbCookie, proxy) => {
-  let option = { headers: { cookie: `${pbCookie}` } }
-  if (proxy) {
-    option.agent = proxy
-  }
+const getUpdatedSettings = async (channelName, pbCookie) => {
   const _setting = await fetch(
       `https://poe.com/api/settings?channel=${channelName}`,
-      option
+      { headers: { cookie: `${pbCookie}` } }
   )
   if (_setting.status !== 200) throw new Error('Failed to fetch token')
   const appSettings = await _setting.json()

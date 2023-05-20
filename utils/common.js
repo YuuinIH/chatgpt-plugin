@@ -340,10 +340,8 @@ export async function renderUrl (e, url, renderCfg = {}) {
           width: renderCfg.Viewport.width || 1280,
           height: renderCfg.Viewport.height || 720,
           timeout: 120000,
-          waitUtil: renderCfg.waitUtil || 'networkidle2',
-          wait: renderCfg.wait || 1000,
-          func: renderCfg.func || '',
-          dpr: renderCfg.dpr || 1
+          selector: Config.live2d ? "#live2d-widget" : "body",
+          wait: renderCfg.wait || 1000
         },
         type: 'image'
       })

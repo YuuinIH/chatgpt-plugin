@@ -62,10 +62,6 @@ async function uploadRecord (recordUrl, ttsMode = 'vits-uma-genshin-honkai') {
         recordUrl = tmpFile
       }
       if (recordType === 'file' || Config.cloudMode === 'file') {
-        if (!recordUrl) {
-          logger.error('云转码错误：recordUrl 异常')
-          return false
-        }
         const formData = new FormData()
         let buffer
         if (!recordUrl.startsWith('http')) {
@@ -87,13 +83,9 @@ async function uploadRecord (recordUrl, ttsMode = 'vits-uma-genshin-honkai') {
           method: 'POST',
           body: formData
         })
-        let t = await resultres.arrayBuffer()
+        let t = await resultres.text()
         try {
-          result = {
-            buffer: {
-              data: t
-            }
-          }
+          result = JSON.parse(t)
         } catch (e) {
           logger.error(t)
           throw e
@@ -177,6 +169,7 @@ async function uploadRecord (recordUrl, ttsMode = 'vits-uma-genshin-honkai') {
     headers,
     body: buf
   })
+  // await axios.post(url, buf, { headers });
 
   const fid = rsp[11].toBuffer()
   const b = core.pb.encode({
@@ -219,6 +212,8 @@ async function getPttBuffer (file, ffmpeg = 'ffmpeg') {
       return audioTrans(tmpfile, ffmpeg)
     }
   } else if (file.startsWith('http://') || file.startsWith('https://')) {
+    // 网络文件
+    // const readable = (await axios.get(file, { responseType: "stream" })).data;
     try {
       const headers = {
         'User-Agent': 'Dalvik/2.1.0 (Linux; U; Android 12; MI 9 Build/SKQ1.211230.001)'

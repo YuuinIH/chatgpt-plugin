@@ -24,7 +24,6 @@ export class SlackClaudeClient {
       if (Config.proxy) {
         option.agent = proxy(Config.proxy)
       }
-      option.logLevel = Config.debug ? 'debug': 'info'
       this.app = new slack.App(option)
     } else {
       throw new Error('未配置Slack信息')
